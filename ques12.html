@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TMDB Movie List with Details</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        img {
+            max-width: 100px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Movies with Details</h1>
+    <table id="movieTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Poster</th>
+                <th>Year</th>
+                <th>Genre</th>
+                <th>Rating</th>
+                <th>Director</th>
+                <th>Country</th>
+                <th>Language</th>
+                <th>Actors</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Movie rows will be inserted here -->
+        </tbody>
+    </table>
+
+    <script>
+        const apiKey = 'ffa45013a85daddb6bad24214154e9cb'; // Your TMDB API key
+        const apiUrl = `https://api.themoviedb.org/3/movie/popular?api_key=${apiKey}&language=en-US&page=1`;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    const movies = data.results;
+                    const tableBody = document.getElementById('movieTable').getElementsByTagName('tbody')[0];
+
+                    movies.forEach((movie, index) => {
+                        // Fetch additional details for each movie
+                        fetch(`https://api.themoviedb.org/3/movie/${movie.id}?api_key=${apiKey}&language=en-US`)
+                            .then(response => response.json())
+                            .then(details => {
+                                const row = tableBody.insertRow();
+
+                                row.insertCell(0).textContent = index + 1; // ID
+                                row.insertCell(1).textContent = details.title; // Title
+
+                                const posterCell = row.insertCell(2); // Poster
+                                const img = document.createElement('img');
+                                img.src = `https://image.tmdb.org/t/p/w200${details.poster_path}`;
+                                img.alt = details.title;
+                                posterCell.appendChild(img);
+
+                                row.insertCell(3).textContent = details.release_date.split('-')[0]; // Year
+
+                                // Genre
+                                const genres = details.genres.map(genre => genre.name).join(', ');
+                                row.insertCell(4).textContent = genres || 'N/A';
+
+                                row.insertCell(5).textContent = details.vote_average; // Rating
+
+                                // Director
+                                const director = details.credits?.crew?.find(member => member.job === 'Director')?.name || 'N/A';
+                                row.insertCell(6).textContent = director;
+
+                                // Country
+                                const country = details.production_countries.map(c => c.name).join(', ');
+                                row.insertCell(7).textContent = country || 'N/A';
+
+                                // Language
+                                row.insertCell(8).textContent = details.original_language;
+
+                                // Actors
+                                const actors = details.credits?.cast?.slice(0, 3).map(actor => actor.name).join(', ') || 'N/A';
+                                row.insertCell(9).textContent = actors;
+                            })
+                            .catch(error => console.error(`Error fetching details for movie ID: ${movie.id}`, error));
+                    });
+                })
+                .catch(error => console.error('Error fetching movies:', error));
+        });
+    </script>
+</body>
+</html>
